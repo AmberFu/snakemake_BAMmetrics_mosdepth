@@ -2,3 +2,47 @@
 # Please follow the best practices: 
 # https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html,
 # in particular regarding the standardized folder structure mentioned there. 
+import pandas as pd
+
+# Standard Configuration:
+configfile: "../config/config.yaml"
+
+##### REF #####
+hg38_reference_genome = config['hg38FE']
+KnownSite19443 = config['vcf']['storage1']['ks19443dbsnp']
+KnownSite20267 = config['vcf']['storage1']['ks20267indel']
+KnownSite20211 = config['vcf']['storage1']['ks20211mills']
+ONEKGENOME_SNP = config['vcf']['storage1']['onekgsnp_vcf']
+DBSNP = config['vcf']['storage1']['dbsnp_vcf']
+HAPMAP = config['vcf']['storage1']['hapmap_vcf']
+OMNI = config['vcf']['storage1']['omni_vcf']
+VERIFYBAMID2_SVDPREFIX = config['SVDPrefix']
+LIFTOVER_HG19REF = config['hg19']
+LIFTOVER_HG38TO19_CHAINFILE = config['liftoverChainFile_hg38to19']
+
+##### Modules #####
+include: "rules/common.smk"
+include: "rules/mosdepth_BAMmetrics.smk"
+
+#####################
+#print(SAMPLES)
+
+### For mapping FQ_prfix with Output_name_prefix - prefix_dict
+### For expcted outputlist: FASTQ_PREFIX, GVCFs, PREFIX, BAM_METRICS
+FASTQ_PREFIX = []
+GVCFs = []
+PREFIX = []
+BAM_METRICS = []
+for index, row in SAMPLES.iterrows():
+    FASTQ_PREFIX.append('{}'.format(row['BAMCRAM_STEMNAME']))
+    GVCFs.append('{}.g.vcf'.format(row['prefix']))
+    PREFIX.append(row['prefix'])
+    BAM_METRICS.append('{}_bamMetrics.txt'.format(row['prefix']))
+#####################
+
+##### Target rules #####
+# https://snakemake.readthedocs.io/en/stable/tutorial/basics.html#step-7-adding-a-target-rule
+rule all:
+    input:
+        ### Mosdepth BAM metrics:
+        "{prefix}.mosdepth.summary.txt"
